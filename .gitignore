@@ -1,0 +1,25 @@
+# Виртуальные окружения Python
+.venv/
+venv/
+ENV/
+env/
+
+# Настройки PyCharm / JetBrains IDE
+.idea/
+
+# Служебные файлы операционных систем
+.DS_Store
+Thumbs.db
+
+# Логи и временные файлы
+*.log
+npm-debug.log*
+
+# Кэширование
+__pycache__/
+*.pyc
+
+# Папки сборки и зависимостей Node.js (если появятся в будущем)
+node_modules/
+dist/
+build/
