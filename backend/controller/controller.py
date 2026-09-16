@@ -9,20 +9,35 @@ service = None  # TODO StudentService
 
 @students_bp.get("")
 def get_students():
-    students = service.get_students()
+    try:
+        students = service.get_students()
+    except Exception:  # TODO ServerException
+        return jsonify({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "The server cannot process the error"
+            }
+        }), 500
     return jsonify(students), 200
 
 @students_bp.get("/<int:student_id>")
 def get_student(student_id):
-    student = service.get_student(student_id)
-
-    if student is None:
+    try:
+        student = service.get_student(student_id)
+    except Exception:  # TODO NotFoundException
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
+    except Exception:  # TODO ServerException
+        return jsonify({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "The server cannot process the error"
+            }
+        }), 500
 
     return jsonify(student), 200
 
@@ -40,27 +55,27 @@ def create_student():
 
     try:
         student = service.create_student(data)
-    except ValueError as error:  # TODO ValidationError
+    except ValueError as error:  # TODO ValidationException
         return jsonify({
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": str(error)
             }
         }), 422
-    except KeyError as error:  # TODO Custom error
-        return jsonify({
-            "error": {
-                "code": "BAD_REQUEST",
-                "message": f"Missing field: {error.args[0]}"
-            }
-        }), 400
-    except FileExistsError:  # TODO Custom error
+    except FileExistsError:  # TODO NotUniqueIdException
         return jsonify({
             "error": {
                 "code": "CONFLICT",
                 "message": "Student with this ISU_ID already exists"
             }
         }), 409
+    except Exception:  # TODO ServerException
+        return jsonify({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "The server cannot process the error"
+            }
+        }), 500
 
     return jsonify(student), 201
 
@@ -85,14 +100,14 @@ def update_student(student_id):
                 "message": str(error)
             }
         }), 422
-    except FileExistsError:  # TODO Custom error
+    except FileExistsError:  # TODO NotFoundException
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
-    except Exception:  # TODO Custom error
+    except Exception:  # TODO ServerException
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
@@ -113,13 +128,20 @@ def delete_student(student_id):
                 "message": str(error)
             }
         }), 422
-    except FileExistsError:  # TODO Custom error
+    except FileExistsError:  # TODO NotFoundException
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
+    except Exception:  # TODO ServerException
+        return jsonify({
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "The server cannot process the error"
+            }
+        }), 500
 
     return "", 204
 
