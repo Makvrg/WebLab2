@@ -20,6 +20,10 @@ class StudentService(Singleton):
 
         if not re.fullmatch(r"[1-9]\d{5}", str(data["isuId"])):
             raise ValidationException("Некорректный формат ИСУ. Ожидается 6 цифр.")
+        try:
+            data["isuId"] = int(data["isuId"])
+        except ValueError:
+            raise ValidationException("Номер ИСУ должен быть числом.")
 
         if not re.fullmatch(r"[A-Z][34][1-4]\d{2}", str(data["stGroup"])):
             raise ValidationException("Некорректный формат группы.")
@@ -28,15 +32,15 @@ class StudentService(Singleton):
             raise ValidationException("ФИО должно содержать минимум 5 символов.")
 
         try:
-            dorm_num = int(data["dormitoryNumber"])
-            if not (1 <= dorm_num <= 4):
+            data["dormitoryNumber"] = int(data["dormitoryNumber"])
+            if not (1 <= data["dormitoryNumber"] <= 4):
                 raise ValidationException("Номер общежития должен быть от 1 до 4.")
         except ValueError:
             raise ValidationException("Номер общежития должен быть числом.")
 
         try:
-            room_num = int(data["room"])
-            if not (100 <= room_num <= 2000):
+            data["room"] = int(data["room"])
+            if not (100 <= data["room"] <= 2000):
                 raise ValidationException("Номер комнаты должен быть от 100 до 2000.")
         except ValueError:
             raise ValidationException("Номер комнаты должен быть числом.")

@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
 
+from backend.exceptions import ServerException, NotFoundException, ValidationException, NotUniqueIdException
+
 students_bp = Blueprint("students",
                         __name__,
                         url_prefix="/students"
                         )
 
-service = None  # TODO StudentService
+service = None
 
 @students_bp.get("")
 def get_students():
@@ -22,7 +24,7 @@ def get_students():
 
         students = service.get_students(filters)
         return jsonify(students), 200
-    except Exception:  # TODO ServerException
+    except ServerException:
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
@@ -35,14 +37,14 @@ def get_student(student_id):
     try:
         student = service.get_student(student_id)
         return jsonify(student), 200
-    except Exception:  # TODO NotFoundException
+    except NotFoundException:
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
-    except Exception:  # TODO ServerException
+    except ServerException:
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
@@ -65,21 +67,21 @@ def create_student():
     try:
         student = service.create_student(data)
         return jsonify(student), 201
-    except ValueError as error:  # TODO ValidationException
+    except ValidationException as error:
         return jsonify({
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": str(error)
             }
         }), 422
-    except FileExistsError:  # TODO NotUniqueIdException
+    except NotUniqueIdException:
         return jsonify({
             "error": {
                 "code": "CONFLICT",
                 "message": "Student with this ISU_ID already exists"
             }
         }), 409
-    except Exception:  # TODO ServerException
+    except ServerException:
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
@@ -102,21 +104,21 @@ def update_student(student_id):
     try:
         student = service.update_student(student_id, data)
         return jsonify(student), 200
-    except ValueError as error:  # TODO ValidationError
+    except ValidationException as error:
         return jsonify({
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": str(error)
             }
         }), 422
-    except FileExistsError:  # TODO NotFoundException
+    except NotFoundException:
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
-    except Exception:  # TODO ServerException
+    except ServerException:
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",
@@ -129,21 +131,21 @@ def delete_student(student_id):
     try:
         service.delete_student(student_id)
         return "", 204
-    except ValueError as error:  # TODO ValidationError
+    except ValidationException as error:
         return jsonify({
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": str(error)
             }
         }), 422
-    except FileExistsError:  # TODO NotFoundException
+    except NotFoundException:
         return jsonify({
             "error": {
                 "code": "NOT_FOUND",
                 "message": f"Student by ISU_ID={student_id} not found"
             }
         }), 404
-    except Exception:  # TODO ServerException
+    except ServerException:
         return jsonify({
             "error": {
                 "code": "INTERNAL_SERVER_ERROR",

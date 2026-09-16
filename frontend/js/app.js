@@ -4,40 +4,190 @@ import {FormView} from "./view/FormView.js";
 import {ProfileView} from "./view/ProfileView.js";
 import {Student} from "./entity/Student.js";
 
+const ERROR_MESSAGES = {
+    400: "Некорректный запрос. Проверьте введённые данные.",
+    404: "Запрошенный студент не найден.",
+    409: "Студент с таким ИСУ ID уже существует.",
+    422: "Сервер отклонил данные. Проверьте значения полей.",
+    500: "Ошибка со стороны сервера."
+};
+
+function getErrorMessage(error) {
+    if (error?.code === "NETWORK_ERROR") {
+        return "Не удалось связаться с сервером.";
+    }
+
+    return ERROR_MESSAGES[error?.status]
+        || error?.message
+        || "Произошла неизвестная ошибка.";
+}
+
+function showPageError(message) {
+    let errorEl = document.getElementById("page-error");
+
+    if (!errorEl) {
+        errorEl = document.createElement("div");
+        errorEl.id = "page-error";
+        errorEl.className = "card";
+        errorEl.setAttribute("role", "alert");
+        errorEl.style.marginBottom = "20px";
+
+        const header = document.querySelector("header");
+        if (header) {
+            header.insertAdjacentElement("afterend", errorEl);
+        } else {
+            document.body.prepend(errorEl);
+        }
+    }
+
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+}
+
+function hidePageError() {
+    const errorEl = document.getElementById("page-error");
+
+    if (errorEl) {
+        errorEl.hidden = true;
+    }
+}
+
+function hideElement(id) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.hidden = true;
+    }
+}
+
+function handleServerError(error, options = {}) {
+    const {hide = []} = options;
+
+    hidePageError();
+    showPageError(getErrorMessage(error));
+
+    hide.forEach(hideElement);
+}
+
+function getFiltersFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const allowedFilters = [
+        "isuId",
+        "fio",
+        "stGroup",
+        "dormitoryNumber",
+        "room",
+        "dateOfPlacement",
+        "isNotRussian",
+    ];
+
+    return Object.fromEntries(
+        allowedFilters
+            .filter(key => params.has(key) && params.get(key) !== "")
+            .map(key => [key, params.get(key)])
+    );
+}
+
+function getFilterQuery(student) {
+    const values = {
+        isuId: student.isuId,
+        fio: student.fio,
+        stGroup: student.stGroup,
+        dormitoryNumber: student.dormitoryNumber,
+        room: student.room,
+        dateOfPlacement: student.dateOfPlacement
+    };
+
+    const params = new URLSearchParams();
+
+    Object.entries(values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            params.set(key, String(value));
+        }
+    });
+
+    // Для чекбокса отсутствие отметки означает отсутствие фильтра.
+    if (student.isNotRussian) {
+        params.set("isNotRussian", "true");
+    }
+
+    return params;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     /** @type {Controller} */
     const controller = Controller.getInstance();
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     const queryId = urlParams.get("id");
+    const requestedMode = urlParams.get("mode");
 
     // 1. Страница списка (index.html)
     if (document.getElementById("students-table")) {
         const tableView = new TableView("#table-body", async isuId => {
             await controller.deleteStudent(isuId);
-            tableView.render((await controller.getStudents()).map(Student.fromJSON));
+            const filters = getFiltersFromQuery();
+            tableView.render(
+                (await controller.getStudents(filters)).map(Student.fromJSON)
+            );
+        });
+
+        try {
+            hidePageError();
+
+            const filters = getFiltersFromQuery();
+            const students = await controller.getStudents(filters);
+
+            tableView.render(students.map(Student.fromJSON));
+        } catch (error) {
+            handleServerError(error, {
+                hide: ["add-btn", "filter-btn", "students-table"]
+            });
         }
-        );
-        tableView.render((await controller.getStudents()).map(Student.fromJSON));
     }
 
     // 2. Страница формы (form.html)
     if (document.getElementById("student-form")) {
-        const formView = new FormView("#student-form",
-            async (student, isEditMode) => {
-            if (isEditMode) {
-                await controller.updateStudent(student.isuId, student);
-            } else {
+        const initialMode = requestedMode === "filter" ? "filter" : "add";
+
+        const formView = new FormView(
+            "#student-form",
+            async (student, mode) => {
+                if (mode === "edit") {
+                    await controller.updateStudent(student.isuId, student);
+                    window.location.href = "index.html";
+                    return;
+                }
+
+                if (mode === "filter") {
+                    const params = getFilterQuery(student);
+                    const query = params.toString();
+
+                    window.location.href = query
+                        ? `index.html?${query}`
+                        : "index.html";
+                    return;
+                }
+
                 await controller.addStudent(student);
-            }
-            window.location.href = "index.html";
-        }
+                window.location.href = "index.html";
+            },
+            initialMode
         );
 
         if (queryId) {
-            const student = Student.fromJSON(await controller.getStudent(queryId));
-            if (student) {
-                formView.fillForm(student);
+            try {
+                const student = Student.fromJSON(
+                    await controller.getStudent(queryId)
+                );
+
+                if (student) {
+                    formView.fillForm(student);
+                }
+            } catch (error) {
+                handleServerError(error, {
+                    hide: ["student-form"]
+                });
             }
         }
     }
@@ -45,26 +195,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. Страница карточки студента (student.html)
     if (document.querySelector(".profile-card")) {
         const profileView = new ProfileView();
+
         try {
-            const student = Student.fromJSON(await controller.getStudent(queryId));
+            const student = Student.fromJSON(
+                await controller.getStudent(queryId)
+            );
+
             if (student) {
-            profileView.render(student);
+                profileView.render(student);
+            } else {
+                throw {
+                    status: 404
+                };
             }
         } catch (error) {
-            if (error.message === "NETWORK_ERROR") {
-                    // TODO Как-то рассказать пользователю об ошибке
-                } else if (error.status == 500) {
-                    if (document.querySelector("card profile-card")) {
-                        document.querySelector("card profile-card").hidden = true;
-                    }
-                    if (document.querySelector("btn")) {
-                        document.querySelector("btn").hidden = true;
-                    }
-                    if (document.querySelector("h1")) {
-                        document.querySelector("h1").textContent = "Ошибка со стороны сервера";
-                    }
-                }
+            handleServerError(error, {
+                hide: ["profile-card"]
+            });
+
+            const title = document.querySelector("h1");
+
+            if (title && error?.status === 500) {
+                title.textContent = "Ошибка со стороны сервера";
+            }
         }
     }
-}
-);
+});

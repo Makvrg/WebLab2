@@ -1,7 +1,7 @@
 export class Controller {
 
     static #instance = null;
-    static #API_URL = "/api/requests";
+    static API_URL = "http://127.0.0.1:5000/students";
 
     constructor() {
         throw new Error("Используйте Controller.getInstance() вместо new");
@@ -15,7 +15,7 @@ export class Controller {
     }
 
     async getStudents(filters = {}) {
-        const url = new URL(this.#API_URL);
+        const url = new URL(Controller.API_URL);
 
         const allowedFilters = [
             "isuId",
@@ -43,14 +43,14 @@ export class Controller {
 
     async getStudent(id) {
         return await this.request_response_cycle(
-            `${this.#API_URL}/${encodeURIComponent(id)}`, {
+            `${Controller.API_URL}/${encodeURIComponent(id)}`, {
             method: "GET"
         }
         );
     }
 
     async addStudent(student) {
-        return await this.request_response_cycle(this.#API_URL, {
+        return await this.request_response_cycle(Controller.API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -62,7 +62,7 @@ export class Controller {
 
     async updateStudent(id, student) {
         return await this.request_response_cycle(
-            `${this.#API_URL}/${encodeURIComponent(id)}`, {
+            `${Controller.API_URL}/${encodeURIComponent(id)}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json"
@@ -74,7 +74,7 @@ export class Controller {
 
     async deleteStudent(id) {
         return await this.request_response_cycle(
-            `${this.#API_URL}/${encodeURIComponent(id)}`, {
+            `${Controller.API_URL}/${encodeURIComponent(id)}`, {
             method: "DELETE"
         }
         );
