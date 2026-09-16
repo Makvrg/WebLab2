@@ -1,24 +1,23 @@
 import {Student} from "../entity/Student.js";
-import {StorageRepository} from "../repository/StorageRepository.js";
 
 export class FormView {
 
     form;
     onSubmitCallback;
-    isEditMode = false;
-    storageRepository;
+    mode = "add";
 
     /**
      * @param {string} formSelector Селектор формы для работы с ней
-     * @param {StorageRepository} storageRepository Синглтон репозитория
-     * @param {Function} onSubmitCallback (student: Student, isEditMode: boolean) => void
+     * @param {Function} onSubmitCallback (student: Student, mode: "add"|"edit"|"filter") => void
+     * @param {"add"|"edit"|"filter"} initialMode Начальный режим формы
      */
-    constructor(formSelector, storageRepository, onSubmitCallback) {
+    constructor(formSelector, onSubmitCallback, initialMode = "add") {
         this.form = document.querySelector(formSelector);
         this.onSubmitCallback = onSubmitCallback;
-        this.storageRepository = storageRepository
+        this.mode = initialMode;
 
         if (this.form) {
+            this.#applyMode();
             this.#initEvents();
         }
     }
@@ -37,7 +36,8 @@ export class FormView {
     }
 
     fillForm(student) {
-        this.isEditMode = true;
+        this.mode = "edit";
+        this.#applyMode();
 
         if (document.getElementById("isu")) {
             document.getElementById("isu").value = student.isuId;
@@ -64,34 +64,104 @@ export class FormView {
         if (document.getElementById("notes")) {
             document.getElementById("notes").value = student.notes || "";
         }
+    }
 
+    #applyMode() {
         const titleEl = document.getElementById("form-title");
         const submitBtn = document.getElementById("submit-btn");
+        const isuEl = document.getElementById("isu");
+
+        if (this.mode === "filter") {
+            if (titleEl) {
+                titleEl.textContent = "Фильтрация студентов";
+            }
+
+            if (submitBtn) {
+                submitBtn.textContent = "Применить фильтры";
+            }
+
+            if (isuEl) {
+                isuEl.readOnly = false;
+            }
+
+            // В режиме фильтрации все поля необязательны.
+            this.form.querySelectorAll("input, textarea, select").forEach(field => {
+                field.required = false;
+            });
+
+            return;
+        }
+
+        if (this.mode === "edit") {
+            if (titleEl) {
+                titleEl.textContent = "Редактирование студента";
+            }
+
+            if (submitBtn) {
+                submitBtn.textContent = "Сохранить изменения";
+            }
+
+            return;
+        }
 
         if (titleEl) {
-            titleEl.textContent = "Редактирование студента";
+            titleEl.textContent = "Добавление студента";
         }
+
         if (submitBtn) {
-            submitBtn.textContent = "Сохранить изменения";
+            submitBtn.textContent = "Сохранить данные";
+        }
+
+        if (isuEl) {
+            isuEl.readOnly = false;
         }
     }
 
     #initEvents() {
-        this.form.addEventListener("submit", event => {
+        this.form.addEventListener("submit", async event => {
             event.preventDefault();
 
             const student = this.getStudentFromForm();
-            if (!this.storageRepository.containsId(student.isuId)) {
+
+            try {
                 if (this.onSubmitCallback) {
-                    this.onSubmitCallback(student, this.isEditMode);
+                    await this.onSubmitCallback(student, this.mode);
                 }
-            } else {
-                if (document.getElementById("isu")) {
-                    document.getElementById("isu").value = "";
+            } catch (error) {
+                const errorMessage = error?.code === "NETWORK_ERROR"
+                    ? "Не удалось связаться с сервером."
+                    : error?.message
+                        || ({
+                            400: "Некорректный запрос. Проверьте введённые данные.",
+                            404: "Студент не найден.",
+                            409: "Студент с таким ИСУ ID уже существует.",
+                            422: "Сервер отклонил данные. Проверьте значения полей.",
+                            500: "Ошибка со стороны сервера."
+                        }[error?.status] || "Произошла неизвестная ошибка.");
+
+                let errorEl = document.getElementById("form-error");
+
+                if (!errorEl) {
+                    errorEl = document.createElement("div");
+                    errorEl.id = "form-error";
+                    errorEl.className = "card";
+                    errorEl.setAttribute("role", "alert");
+                    errorEl.style.marginBottom = "20px";
+                    this.form.insertAdjacentElement("beforebegin", errorEl);
                 }
-                    alert("Студент с данным ИСУ уже существует")
+
+                errorEl.textContent = errorMessage;
+                errorEl.hidden = false;
+
+                if (error?.status === 500) {
+                    this.form.hidden = true;
+
+                    if (document.getElementById("form-title")) {
+                        document.getElementById("form-title")
+                            .textContent = "Ошибка со стороны сервера";
+                    }
+                }
             }
-        }
-        );
+        });
     }
 }
