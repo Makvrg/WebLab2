@@ -17,12 +17,14 @@ function getErrorMessage(error) {
         return "Не удалось связаться с сервером.";
     }
 
-    return ERROR_MESSAGES[error?.status]
+    const status = Number(error?.status);
+
+    return ERROR_MESSAGES[status]
         || error?.message
         || "Произошла неизвестная ошибка.";
 }
 
-function showPageError(message) {
+function showPageError(error) {
     let errorEl = document.getElementById("page-error");
 
     if (!errorEl) {
@@ -33,6 +35,7 @@ function showPageError(message) {
         errorEl.style.marginBottom = "20px";
 
         const header = document.querySelector("header");
+
         if (header) {
             header.insertAdjacentElement("afterend", errorEl);
         } else {
@@ -40,8 +43,10 @@ function showPageError(message) {
         }
     }
 
-    errorEl.textContent = message;
+    errorEl.textContent = getErrorMessage(error);
     errorEl.hidden = false;
+
+    return errorEl;
 }
 
 function hidePageError() {
@@ -63,14 +68,22 @@ function hideElement(id) {
 function handleServerError(error, options = {}) {
     const {hide = []} = options;
 
-    hidePageError();
-    showPageError(getErrorMessage(error));
+    showPageError(error);
 
     hide.forEach(hideElement);
+
+    if (Number(error?.status) === 500) {
+        const title = document.querySelector("h1");
+
+        if (title) {
+            title.textContent = "Ошибка со стороны сервера";
+        }
+    }
 }
 
 function getFiltersFromQuery() {
     const params = new URLSearchParams(window.location.search);
+
     const allowedFilters = [
         "isuId",
         "fio",
@@ -78,7 +91,7 @@ function getFiltersFromQuery() {
         "dormitoryNumber",
         "room",
         "dateOfPlacement",
-        "isNotRussian",
+        "isNotRussian"
     ];
 
     return Object.fromEntries(
@@ -106,7 +119,7 @@ function getFilterQuery(student) {
         }
     });
 
-    // Для чекбокса отсутствие отметки означает отсутствие фильтра.
+    // Неотмеченный checkbox не задаёт фильтр.
     if (student.isNotRussian) {
         params.set("isNotRussian", "true");
     }
@@ -115,22 +128,34 @@ function getFilterQuery(student) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    /** @type {Controller} */
     const controller = Controller.getInstance();
 
     const urlParams = new URLSearchParams(window.location.search);
     const queryId = urlParams.get("id");
     const requestedMode = urlParams.get("mode");
 
-    // 1. Страница списка (index.html)
+    // Страница списка.
     if (document.getElementById("students-table")) {
         const tableView = new TableView("#table-body", async isuId => {
             await controller.deleteStudent(isuId);
+
             const filters = getFiltersFromQuery();
+            const students = await controller.getStudents(filters);
+
             tableView.render(
-                (await controller.getStudents(filters)).map(Student.fromJSON)
+                students.map(Student.fromJSON)
             );
         });
+
+        const filterBtn = document.getElementById("filter-btn");
+
+        if (filterBtn) {
+            filterBtn.addEventListener("click", event => {
+                event.preventDefault();
+
+                window.location.href = "form.html?mode=filter";
+            });
+        }
 
         try {
             hidePageError();
@@ -138,7 +163,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const filters = getFiltersFromQuery();
             const students = await controller.getStudents(filters);
 
-            tableView.render(students.map(Student.fromJSON));
+            tableView.render(
+                students.map(Student.fromJSON)
+            );
         } catch (error) {
             handleServerError(error, {
                 hide: ["add-btn", "filter-btn", "students-table"]
@@ -146,15 +173,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 2. Страница формы (form.html)
+    // Страница формы.
     if (document.getElementById("student-form")) {
-        const initialMode = requestedMode === "filter" ? "filter" : "add";
+        const initialMode =
+            requestedMode === "filter"
+                ? "filter"
+                : requestedMode === "edit"
+                    ? "edit"
+                    : "add";
 
         const formView = new FormView(
             "#student-form",
             async (student, mode) => {
                 if (mode === "edit") {
-                    await controller.updateStudent(student.isuId, student);
+                    await controller.updateStudent(
+                        student.isuId,
+                        student
+                    );
+
                     window.location.href = "index.html";
                     return;
                 }
@@ -166,10 +202,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     window.location.href = query
                         ? `index.html?${query}`
                         : "index.html";
+
                     return;
                 }
 
                 await controller.addStudent(student);
+
                 window.location.href = "index.html";
             },
             initialMode
@@ -177,13 +215,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (queryId) {
             try {
-                const student = Student.fromJSON(
-                    await controller.getStudent(queryId)
-                );
+                const response =
+                    await controller.getStudent(queryId);
 
-                if (student) {
-                    formView.fillForm(student);
+                if (!response) {
+                    throw {
+                        status: 404
+                    };
                 }
+
+                formView.fillForm(
+                    Student.fromJSON(response)
+                );
             } catch (error) {
                 handleServerError(error, {
                     hide: ["student-form"]
@@ -192,32 +235,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 3. Страница карточки студента (student.html)
+    // Страница карточки студента.
     if (document.querySelector(".profile-card")) {
         const profileView = new ProfileView();
 
         try {
-            const student = Student.fromJSON(
-                await controller.getStudent(queryId)
-            );
+            const response =
+                await controller.getStudent(queryId);
 
-            if (student) {
-                profileView.render(student);
-            } else {
+            if (!response) {
                 throw {
                     status: 404
                 };
             }
+
+            profileView.render(
+                Student.fromJSON(response)
+            );
         } catch (error) {
             handleServerError(error, {
                 hide: ["profile-card"]
             });
-
-            const title = document.querySelector("h1");
-
-            if (title && error?.status === 500) {
-                title.textContent = "Ошибка со стороны сервера";
-            }
         }
     }
 });
