@@ -1,12 +1,20 @@
 from flask import Flask
 
+import backend.controller.controller as controller_module
 from backend.controller.controller import students_bp
 
-app = Flask(__name__)
+from backend.repositories import StudentRepository
+from backend.services import StudentService
 
 
 def create_app():
     app = Flask(__name__)
+
+    repo = StudentRepository.get_instance()
+
+    service = StudentService.get_instance(repo=repo)
+
+    controller_module.service = service
 
     app.register_blueprint(students_bp)
 
@@ -15,6 +23,5 @@ def create_app():
 
 app = create_app()
 
-
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
