@@ -61,11 +61,27 @@ export class TableView {
     }
 
     #initEvents() {
-        this.tbody.addEventListener("click", event => {
+        this.tbody.addEventListener("click", async event => {
             if (event.target.classList.contains("btn-delete")) {
                 const tr = event.target.closest("tr");
                 if (tr && tr.dataset.isuId) {
-                    this.onDeleteCallback(tr.dataset.isuId);
+                    try {
+                        await this.onDeleteCallback(tr.dataset.isuId);
+                    } catch (error) {
+                        if (error.code === "NETWORK_ERROR") {
+                            // TODO Как-то рассказать пользователю об ошибке
+                        } else if (error.status == 500) {
+                            if (document.getElementById("add-btn")) {
+                                document.getElementById("add-btn").hidden = true;
+                            }
+                            if (document.getElementById("table-body")) {
+                                document.getElementById("table-body").hidden = true;
+                            }
+                            if (document.querySelector("h1")) {
+                                document.querySelector("h1").textContent = "Ошибка со стороны сервера";
+                            }
+                        }
+                    }
                 }
             }
         }

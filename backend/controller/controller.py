@@ -10,7 +10,18 @@ service = None  # TODO StudentService
 @students_bp.get("")
 def get_students():
     try:
-        students = service.get_students()
+        filters = {
+            "isuId": request.args.get("isuId"),
+            "fio": request.args.get("fio"),
+            "stGroup": request.args.get("stGroup"),
+            "dormitoryNumber": request.args.get("dormitoryNumber"),
+            "room": request.args.get("room"),
+            "dateOfPlacement": request.args.get("dateOfPlacement"),
+            "isNotRussian": request.args.get("isNotRussian")
+        }
+
+        students = service.get_students(filters)
+        return jsonify(students), 200
     except Exception:  # TODO ServerException
         return jsonify({
             "error": {
@@ -18,12 +29,12 @@ def get_students():
                 "message": "The server cannot process the error"
             }
         }), 500
-    return jsonify(students), 200
 
 @students_bp.get("/<int:student_id>")
 def get_student(student_id):
     try:
         student = service.get_student(student_id)
+        return jsonify(student), 200
     except Exception:  # TODO NotFoundException
         return jsonify({
             "error": {
@@ -39,8 +50,6 @@ def get_student(student_id):
             }
         }), 500
 
-    return jsonify(student), 200
-
 @students_bp.post("")
 def create_student():
     if not request.is_json:
@@ -55,6 +64,7 @@ def create_student():
 
     try:
         student = service.create_student(data)
+        return jsonify(student), 201
     except ValueError as error:  # TODO ValidationException
         return jsonify({
             "error": {
@@ -77,8 +87,6 @@ def create_student():
             }
         }), 500
 
-    return jsonify(student), 201
-
 @students_bp.patch("/<int:student_id>")
 def update_student(student_id):
     if not request.is_json:
@@ -93,6 +101,7 @@ def update_student(student_id):
 
     try:
         student = service.update_student(student_id, data)
+        return jsonify(student), 200
     except ValueError as error:  # TODO ValidationError
         return jsonify({
             "error": {
@@ -114,13 +123,12 @@ def update_student(student_id):
                 "message": "The server cannot process the error"
             }
         }), 500
-
-    return jsonify(student), 200
 
 @students_bp.delete("/<int:student_id>")
 def delete_student(student_id):
     try:
         service.delete_student(student_id)
+        return "", 204
     except ValueError as error:  # TODO ValidationError
         return jsonify({
             "error": {
@@ -142,6 +150,3 @@ def delete_student(student_id):
                 "message": "The server cannot process the error"
             }
         }), 500
-
-    return "", 204
-

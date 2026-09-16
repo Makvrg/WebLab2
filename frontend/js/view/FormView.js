@@ -1,22 +1,19 @@
 import {Student} from "../entity/Student.js";
-import {StorageRepository} from "../repository/StorageRepository.js";
+import {Controller} from "../controller/Controller.js";
 
 export class FormView {
 
     form;
     onSubmitCallback;
     isEditMode = false;
-    storageRepository;
 
     /**
      * @param {string} formSelector Селектор формы для работы с ней
-     * @param {StorageRepository} storageRepository Синглтон репозитория
      * @param {Function} onSubmitCallback (student: Student, isEditMode: boolean) => void
      */
-    constructor(formSelector, storageRepository, onSubmitCallback) {
+    constructor(formSelector, onSubmitCallback) {
         this.form = document.querySelector(formSelector);
         this.onSubmitCallback = onSubmitCallback;
-        this.storageRepository = storageRepository
 
         if (this.form) {
             this.#initEvents();
@@ -77,19 +74,26 @@ export class FormView {
     }
 
     #initEvents() {
-        this.form.addEventListener("submit", event => {
+        this.form.addEventListener("submit", async event => {
             event.preventDefault();
 
             const student = this.getStudentFromForm();
-            if (!this.storageRepository.containsId(student.isuId)) {
+            try {
                 if (this.onSubmitCallback) {
-                    this.onSubmitCallback(student, this.isEditMode);
+                    await this.onSubmitCallback(student, this.isEditMode);
                 }
-            } else {
-                if (document.getElementById("isu")) {
-                    document.getElementById("isu").value = "";
+            } catch (error) {
+                if (error.code === "NETWORK_ERROR") {
+                    // TODO Как-то рассказать пользователю об ошибке
+                } else if (error.status == 500) {
+                    if (document.getElementById("student-form")) {
+                        document.getElementById("student-form").hidden = true;
+                    }
+                    if (document.getElementById("form-title")) {
+                        document.getElementById("form-title")
+                            .textContent = "Ошибка со стороны сервера";
+                    }
                 }
-                    alert("Студент с данным ИСУ уже существует")
             }
         }
         );
