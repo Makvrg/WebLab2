@@ -119,10 +119,7 @@ function getFilterQuery(student) {
         }
     });
 
-    // Неотмеченный checkbox не задаёт фильтр.
-    if (student.isNotRussian) {
-        params.set("isNotRussian", "true");
-    }
+    params.set("isNotRussian", String(student.isNotRussian));
 
     return params;
 }

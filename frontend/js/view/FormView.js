@@ -116,6 +116,8 @@ export class FormView {
         const isuEl =
             document.getElementById("isu");
 
+        const notesContainer =
+            document.getElementById("notes")?.closest(".form-group");
         /*
          * Сначала полностью сбрасываем required.
          * Это важно, чтобы при переходе в filter
@@ -143,6 +145,10 @@ export class FormView {
                 isuEl.readOnly = false;
             }
 
+            if (notesContainer) {
+                notesContainer.hidden = true;
+            }
+
             return;
         }
 
@@ -162,6 +168,10 @@ export class FormView {
                 isuEl.readOnly = true;
             }
 
+            if (notesContainer) {
+                notesContainer.hidden = false;
+            }
+
             return;
         }
 
@@ -179,6 +189,10 @@ export class FormView {
         if (isuEl) {
             isuEl.readOnly = false;
         }
+
+        if (notesContainer) {
+                notesContainer.hidden = false;
+            }
 
         /*
          * При добавлении обязательны те же поля,

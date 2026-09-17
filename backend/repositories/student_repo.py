@@ -1,6 +1,5 @@
 import os
 import json
-import atexit
 from backend.core import Singleton
 from backend.models import Student
 from backend.exceptions import ServerException
@@ -16,8 +15,6 @@ class StudentRepository(Singleton):
 
             self._load_from_file()
             self.initialized = True
-
-            atexit.register(self.save_to_file)
 
     def _validate_storage_access(self) -> None:
         if os.path.exists(self.filepath):
@@ -66,15 +63,22 @@ class StudentRepository(Singleton):
 
     def add(self, student: Student) -> None:
         self._students.append(student)
+        self.save_to_file()
 
     def update(self, updated_student: Student) -> bool:
         for i, student in enumerate(self._students):
             if student.isuId == updated_student.isuId:
                 self._students[i] = updated_student
+                self.save_to_file()
                 return True
         return False
 
     def delete(self, isu_id: int) -> bool:
         initial_length = len(self._students)
         self._students = [s for s in self._students if s.isuId != isu_id]
-        return len(self._students) < initial_length
+
+        if len(self._students) < initial_length:
+            self.save_to_file()
+            return True
+
+        return False

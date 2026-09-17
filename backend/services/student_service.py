@@ -58,33 +58,33 @@ class StudentService(Singleton):
 
         if filters:
             # 1. Поиск по ИСУ
-            if filters.get("isuId") is not None:
+            if filters.get("isuId"):
                 students = [s for s in students if str(s.isuId) == str(filters["isuId"])]
 
             # 2. Поиск по ФИО
-            if filters.get("fio") is not None:
+            if filters.get("fio"):
                 fio_query = str(filters["fio"]).lower()
                 students = [s for s in students if fio_query in s.fio.lower()]
 
             # 3. Фильтр по группе
-            if filters.get("stGroup") is not None:
+            if filters.get("stGroup"):
                 students = [s for s in students if s.stGroup == str(filters["stGroup"])]
 
             # 4. Фильтр по номеру общежития
-            if filters.get("dormitoryNumber") is not None:
+            if filters.get("dormitoryNumber"):
                 students = [s for s in students if str(s.dormitoryNumber) == str(filters["dormitoryNumber"])]
 
             # 5. Фильтр по номеру комнаты
-            if filters.get("room") is not None:
+            if filters.get("room"):
                 students = [s for s in students if str(s.room) == str(filters["room"])]
 
             # 6. Фильтр по дате заселения (формат "YYYY-MM-DD")
-            if filters.get("dateOfPlacement") is not None:
+            if filters.get("dateOfPlacement"):
                 students = [s for s in students if s.dateOfPlacement == str(filters["dateOfPlacement"])]
 
             # 7. Фильтр по статусу иностранца
-            if filters.get("isNotRussian") is not None:
-                is_foreigner = str(filters["isNotRussian"]).lower() in ["true", "false"]
+            if filters.get("isNotRussian"):
+                is_foreigner = str(filters["isNotRussian"]).lower() == "true"
                 students = [s for s in students if s.isNotRussian == is_foreigner]
 
         return [student.to_dict() for student in students]
