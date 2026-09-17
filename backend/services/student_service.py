@@ -13,7 +13,7 @@ class StudentService(Singleton):
 
     def _validate_student_data(self, data: dict) -> None:
         required_fields = ["isuId", "fio", "stGroup", "dormitoryNumber",
-                           "room", "dateOfPlacement", "isNotRussian"]
+                           "room", "dateOfPlacement", "isNotRussian", "notes"]
         for field in required_fields:
             if field not in data or data[field] == "" or data[field] is None:
                 raise ValidationException(f"Поле {field} обязательно для заполнения")
@@ -30,7 +30,7 @@ class StudentService(Singleton):
         if len(fio) < 5 or len(fio) > 100:
             raise ValidationException("ФИО должно содержать минимум 5 символов и не более 100.")
 
-        if not re.fullmatch(r"[^\W_]+(?: [^\W_]+)*", fio, re.UNICODE):
+        if not re.fullmatch(r"[А-Яа-яЁёA-Za-z0-9]+(?: [А-Яа-яЁёA-Za-z0-9]+)*", fio, re.UNICODE):
             raise ValidationException(
                 "ФИО может содержать только буквы, цифры и пробелы."
             )
@@ -62,6 +62,9 @@ class StudentService(Singleton):
 
         if not (str(data["isNotRussian"]).lower() in ["true", "false"]):
             raise ValidationException("Требуется True или False.")
+
+        if len(str(data["notes"])) > 1000:
+            raise ValidationException("Максимальное количество символов - 1000.")
 
 
     def get_students(self, filters: dict = None) -> list[dict]:

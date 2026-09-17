@@ -35,6 +35,11 @@ body {
     margin: 0 auto;
 }
 
+.notes-container {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 header {
     display: flex;
     justify-content: space-between;
