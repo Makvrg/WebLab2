@@ -17,35 +17,35 @@
         <form id="student-form" class="card">
 
             <div class="form-group">
-                <label for="fio">ФИО студента *</label>
+                <label for="fio">ФИО студента <span class="req-star">*</span></label>
                 <input type="text" id="fio" required minlength="5" placeholder="Иванов Иван Иванович">
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="group">Группа *</label>
+                    <label for="group">Группа <span class="req-star">*</span></label>
                     <input type="text" id="group" required minlength="5" maxlength="5" pattern="[A-Z][34][1-4]\d{2}" placeholder="Например: P3224">
                 </div>
                 <div class="form-group">
-                    <label for="isu">ИСУ *</label>
+                    <label for="isu">ИСУ <span class="req-star">*</span></label>
                     <input type="text" id="isu" required minlength="6" maxlength="6" pattern="[1-9]\d{5}" placeholder="123456">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="dorm">Номер общежития *</label>
+                    <label for="dorm">Номер общежития <span class="req-star">*</span></label>
                     <input type="number" id="dorm" required min="1" max="4" placeholder="Например: 4">
                 </div>
                 <div class="form-group">
-                    <label for="room">Комната *</label>
+                    <label for="room">Комната <span class="req-star">*</span></label>
                     <input type="number" id="room" required min="100" max="2000" placeholder="Например: 813">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="date">Срок заселения *</label>
-                <input type="date" id="date" required>
+                <label for="date">Срок заселения <span class="req-star">*</span></label>
+                <input type="date" id="date" required min="1000-01-01" max="9999-12-31">
             </div>
 
             <div class="form-group checkbox-group">

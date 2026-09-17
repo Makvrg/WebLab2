@@ -113,6 +113,8 @@ export class FormView {
         const notesContainer =
             document.getElementById("notes")?.closest(".form-group");
 
+        const reqStars = this.form.querySelectorAll(".req-star");
+
         this.form
             .querySelectorAll("input, textarea, select")
             .forEach(field => {
@@ -138,6 +140,8 @@ export class FormView {
                 notesContainer.hidden = true;
             }
 
+            reqStars.forEach(star => star.hidden = true);
+
             return;
         }
 
@@ -160,6 +164,8 @@ export class FormView {
                 notesContainer.hidden = false;
             }
 
+            reqStars.forEach(star => star.hidden = false);
+
             return;
         }
 
@@ -180,6 +186,8 @@ export class FormView {
         if (notesContainer) {
                 notesContainer.hidden = false;
             }
+
+        reqStars.forEach(star => star.hidden = false);
 
         [
             "fio",
@@ -227,8 +235,7 @@ export class FormView {
                         "Студент с таким ИСУ ID уже существует.",
 
                     422:
-                        "Сервер отклонил данные. Проверьте значения полей.",
-
+                        `Сервер отклонил данные. Проверьте значения полей: ${error.message}`,
                     500:
                         "Ошибка со стороны сервера."
                 };
