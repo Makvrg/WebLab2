@@ -63,10 +63,6 @@ export class TableView {
             const safeIsuId =
                 encodeURIComponent(student.isuId);
 
-            /*
-             * Оставлена исходная структура кнопок
-             * и их расположение.
-             */
             actionsTd.innerHTML = `
                 <a href="student.html?id=${safeIsuId}" class="btn btn-small">Просмотр</a>
                 <a href="form.html?id=${safeIsuId}&mode=edit" class="btn btn-small btn-primary">Изменить</a>

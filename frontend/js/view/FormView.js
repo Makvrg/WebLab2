@@ -15,12 +15,6 @@ export class FormView {
         this.form = document.querySelector(formSelector);
         this.onSubmitCallback = onSubmitCallback;
 
-        /*
-         * Режим из URL имеет приоритет.
-         * form.html?mode=filter -> filter
-         * form.html?mode=edit   -> edit
-         * без mode              -> add
-         */
         const urlMode =
             new URLSearchParams(window.location.search).get("mode");
 
@@ -118,18 +112,13 @@ export class FormView {
 
         const notesContainer =
             document.getElementById("notes")?.closest(".form-group");
-        /*
-         * Сначала полностью сбрасываем required.
-         * Это важно, чтобы при переходе в filter
-         * обязательные поля из HTML не мешали отправке.
-         */
+
         this.form
             .querySelectorAll("input, textarea, select")
             .forEach(field => {
                 field.required = false;
             });
 
-        // FILTER
         if (this.mode === "filter") {
             if (titleEl) {
                 titleEl.textContent =
@@ -152,7 +141,6 @@ export class FormView {
             return;
         }
 
-        // EDIT
         if (this.mode === "edit") {
             if (titleEl) {
                 titleEl.textContent =
@@ -175,7 +163,6 @@ export class FormView {
             return;
         }
 
-        // ADD
         if (titleEl) {
             titleEl.textContent =
                 "Добавление студента";
@@ -194,10 +181,6 @@ export class FormView {
                 notesContainer.hidden = false;
             }
 
-        /*
-         * При добавлении обязательны те же поля,
-         * которые имеют required в исходном form.html.
-         */
         [
             "fio",
             "group",
