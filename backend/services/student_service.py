@@ -95,6 +95,25 @@ class StudentService(Singleton):
             raise NotFoundException(f"Студент с ИСУ {isu_id} не найден.")
         return student.to_dict()
 
+    def query_student(self, isu_id: int, query_data: dict) -> dict:
+        student = self.get_student(isu_id)
+
+        if not query_data:
+            return student
+
+        for key, expected_value in query_data.items():
+            if key in student:
+                real_value = student[key]
+
+                if str(real_value).lower() != str(expected_value).lower():
+                    raise NotFoundException(
+                        f"Студент с ИСУ {isu_id} существует, но его поле '{key}' не равно '{expected_value}'"
+                    )
+            else:
+                raise ValidationException(f"Поле '{key}' не существует для фильтрации")
+
+        return student
+
     def create_student(self, data: dict) -> dict:
         self._validate_student_data(data)
 

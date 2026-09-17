@@ -32,11 +32,25 @@ def get_students():
             }
         }), 500
 
-@students_bp.get("/<int:student_id>")
+@students_bp.route("/<int:student_id>", methods=["GET", "QUERY"])
 def get_student(student_id):
     try:
+        if request.method == "QUERY":
+            if not request.is_json:
+                return jsonify({
+                    "error": {
+                        "code": "BAD_REQUEST",
+                        "message": "QUERY request body must be JSON"
+                    }
+                }), 400
+
+            query_data = request.get_json()
+            student = service.query_student(student_id, query_data)
+            return jsonify(student), 200
+
         student = service.get_student(student_id)
         return jsonify(student), 200
+
     except NotFoundException:
         return jsonify({
             "error": {
