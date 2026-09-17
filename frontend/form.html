@@ -18,7 +18,7 @@
 
             <div class="form-group">
                 <label for="fio">ФИО студента <span class="req-star">*</span></label>
-                <input type="text" id="fio" required minlength="5" placeholder="Иванов Иван Иванович">
+                <input type="text" id="fio" required minlength="5" maxlength="100" placeholder="Иванов Иван Иванович" pattern="[^\W_]+(?: [^\W_]+)*">
             </div>
 
             <div class="form-row">

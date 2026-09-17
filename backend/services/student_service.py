@@ -25,9 +25,20 @@ class StudentService(Singleton):
         except ValueError:
             raise ValidationException("Номер ИСУ должен быть числом.")
 
-        if len(str(data["fio"]).strip()) < 5:
-            raise ValidationException("ФИО должно содержать минимум 5 символов.")
+        fio = str(data["fio"]).strip()
 
+        if len(fio) < 5 or len(fio) > 100:
+            raise ValidationException("ФИО должно содержать минимум 5 символов и не более 100.")
+
+        if not re.fullmatch(r"[^\W_]+(?: [^\W_]+)*", fio, re.UNICODE):
+            raise ValidationException(
+                "ФИО может содержать только буквы, цифры и пробелы."
+            )
+
+        if not any(char.isalpha() for char in fio):
+            raise ValidationException(
+                "ФИО должно содержать хотя бы одну букву."
+            )
         if not re.fullmatch(r"[A-Z][34][1-4]\d{2}", str(data["stGroup"])):
             raise ValidationException("Некорректный формат группы.")
 
