@@ -12,8 +12,8 @@ class StudentService(Singleton):
             self.initialized = True
 
     def _validate_student_data(self, data: dict) -> None:
-        required_fields = ["isuId", "fio", "stGroup",
-                           "dormitoryNumber", "room", "dateOfPlacement"]
+        required_fields = ["isuId", "fio", "stGroup", "dormitoryNumber",
+                           "room", "dateOfPlacement", "isNotRussian"]
         for field in required_fields:
             if field not in data or data[field] == "" or data[field] is None:
                 raise ValidationException(f"Поле {field} обязательно для заполнения")
@@ -25,11 +25,11 @@ class StudentService(Singleton):
         except ValueError:
             raise ValidationException("Номер ИСУ должен быть числом.")
 
-        if not re.fullmatch(r"[A-Z][34][1-4]\d{2}", str(data["stGroup"])):
-            raise ValidationException("Некорректный формат группы.")
-
         if len(str(data["fio"]).strip()) < 5:
             raise ValidationException("ФИО должно содержать минимум 5 символов.")
+
+        if not re.fullmatch(r"[A-Z][34][1-4]\d{2}", str(data["stGroup"])):
+            raise ValidationException("Некорректный формат группы.")
 
         try:
             data["dormitoryNumber"] = int(data["dormitoryNumber"])
@@ -45,6 +45,14 @@ class StudentService(Singleton):
         except ValueError:
             raise ValidationException("Номер комнаты должен быть числом.")
 
+        if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])",
+                            str(data["dateOfPlacement"])):
+            raise ValidationException("Некорректный формат даты.")
+
+        if not (str(data["isNotRussian"]).lower() in ["true", "false"]):
+            raise ValidationException("Требуется True или False.")
+
+
     def get_students(self, filters: dict = None) -> list[dict]:
         students = self.repo.get_all()
 
@@ -59,24 +67,24 @@ class StudentService(Singleton):
                 students = [s for s in students if fio_query in s.fio.lower()]
 
             # 3. Фильтр по группе
-            if filters.get("group") is not None:
-                students = [s for s in students if s.stGroup == str(filters["group"])]
+            if filters.get("stGroup") is not None:
+                students = [s for s in students if s.stGroup == str(filters["stGroup"])]
 
             # 4. Фильтр по номеру общежития
-            if filters.get("dormitory") is not None:
-                students = [s for s in students if str(s.dormitoryNumber) == str(filters["dormitory"])]
+            if filters.get("dormitoryNumber") is not None:
+                students = [s for s in students if str(s.dormitoryNumber) == str(filters["dormitoryNumber"])]
 
             # 5. Фильтр по номеру комнаты
             if filters.get("room") is not None:
                 students = [s for s in students if str(s.room) == str(filters["room"])]
 
             # 6. Фильтр по дате заселения (формат "YYYY-MM-DD")
-            if filters.get("date") is not None:
-                students = [s for s in students if s.dateOfPlacement == str(filters["date"])]
+            if filters.get("dateOfPlacement") is not None:
+                students = [s for s in students if s.dateOfPlacement == str(filters["dateOfPlacement"])]
 
             # 7. Фильтр по статусу иностранца
-            if filters.get("foreigner") is not None:
-                is_foreigner = str(filters["foreigner"]).lower() in ["true", "1", "yes"]
+            if filters.get("isNotRussian") is not None:
+                is_foreigner = str(filters["isNotRussian"]).lower() in ["true", "false"]
                 students = [s for s in students if s.isNotRussian == is_foreigner]
 
         return [student.to_dict() for student in students]

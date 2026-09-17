@@ -21,7 +21,7 @@ function getErrorMessage(error) {
 
     return ERROR_MESSAGES[status]
         || error?.message
-        || "Произошла неизвестная ошибка.";
+        || "Произошла неизвестная ошибка";
 }
 
 function showPageError(error) {

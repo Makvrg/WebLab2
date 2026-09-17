@@ -106,6 +106,7 @@ export class FormView {
     }
 
     #applyMode() {
+        this.form.dataset.mode = this.mode;
         const titleEl =
             document.getElementById("form-title");
 
